@@ -1,5 +1,5 @@
 <div id="sidebar">
-  <select name="Tourism" id="tourism">
+  <select name="Tourism" id="tourism" (change)="attractionSelect($event)">
     <option value="artwork">Artwork</option>
     <option value="attraction">Attraction</option>
     <option value="camp_pitch">Camp Pitch</option>
@@ -46,5 +46,9 @@
   </div>
 </div>
 <div class="map-wrapper">
-  <app-map></app-map>
+  <app-map
+  [zoom]="mapZoom"
+  [center]="melbourneCenter"
+  [basemap]="basemap"
+  [attractionType]="attractionType"></app-map>
 </div>
