@@ -1,54 +1,9 @@
-<div id="sidebar">
-  <select name="Tourism" id="tourism" (change)="attractionSelect($event)">
-    <option value="artwork">Artwork</option>
-    <option value="attraction">Attraction</option>
-    <option value="camp_pitch">Camp Pitch</option>
-    <option value="camp_site">Camp Site</option>
-    <option value="picnic_site">Picnic Site</option>
-    <option value="viewpoint">View Point</option>
-    <option value="zoo">Zoo</option>
-  </select>
-  <div id="favorites">
-    <div class="title">
-      Favorite Places:
-    </div>
-    <div class="place">
-      <div class="icons">
-        <i class="material-icons hover">star</i>
-      </div>
-      <div class="place-content">
-        Steam Locomotive Society of Victoria
-      </div>
-    </div>
-    <div class="place">
-      <div class="icons">
-        <i class="material-icons hover">terrain</i>
-      </div>
-      <div class="place-content">
-        LongRidge Camp Site
-      </div>
-    </div>
-    <div class="place">
-      <div class="icons">
-        <i class="material-icons hover">collections</i>
-      </div>
-      <div class="place-content">
-        4DVerse Art Gallery
-      </div>
-    </div><div class="place">
-      <div class="icons">
-        <i class="material-icons hover">shopping_basket</i>
-      </div>
-      <div class="place-content">
-        Bellbird Picnic Area
-      </div>
-    </div>
-  </div>
-</div>
-<div class="map-wrapper">
-  <app-map
-  [zoom]="mapZoom"
-  [center]="melbourneCenter"
-  [basemap]="basemap"
-  [attractionType]="attractionType"></app-map>
-</div>
+<mat-toolbar *ngIf="!loged" color="primary" class="app-header">
+  <div><a href="#" target="_blank" class="positronx">Tourism in Melbourne</a></div>
+  <span class="nav-tool-items">
+    <a mat-button routerLink="signin" routerLinkActive="active">Sign In</a>
+    <a mat-button mat-raised-button routerLink="register" routerLinkActive="active">Register</a>
+  </span>
+</mat-toolbar>
+
+<router-outlet></router-outlet>
