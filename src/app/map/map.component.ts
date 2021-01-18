@@ -36,14 +36,6 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   @Input()
-  set attractionType(attractionType: string) {
-    this._attractionType = attractionType;
-    if (this.touristAttractionsLayer) {
-      this.queryLayerByType(attractionType);
-    }
-  }
-
-  @Input()
   set zoom(zoom: number) {
     this._zoom = zoom;
   }
@@ -108,7 +100,6 @@ export class MapComponent implements OnInit, OnDestroy {
       this.queryLayerByType(this._attractionType);
       return this._view;
     } catch (error) {
-      console.log("EsriLoader: ", error);
     }
   }
 
@@ -116,7 +107,6 @@ export class MapComponent implements OnInit, OnDestroy {
     // Initialize MapView and return an instance of MapView
     this.initializeMap().then(mapView => {
       // The map has been initialized
-      console.log("mapView ready: ", this._view.ready);
       this._loaded = this._view.ready;
       this.mapLoadedEvent.emit(true);
     });
@@ -140,7 +130,6 @@ export class MapComponent implements OnInit, OnDestroy {
           });
   
           if (feature.attributes.website) {
-            console.log(feature.attributes.website);
             contentStyle = "";
           }
 
@@ -182,6 +171,13 @@ export class MapComponent implements OnInit, OnDestroy {
       });
     } catch (error) {
       console.log(error);
+    }
+  }
+  
+  attractionSelect(event) {
+    this._attractionType = event.target.value;
+    if (this.touristAttractionsLayer) {
+      this.queryLayerByType(this._attractionType);
     }
   }
 
