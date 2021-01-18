@@ -6,8 +6,8 @@ import { Router, NavigationStart } from '@angular/router';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
 
+export class AppComponent implements OnInit {
   melbourneCenter = [144.95853, -38.025498];
   basemap = "topo-vector"
   mapZoom = 10;
@@ -25,5 +25,9 @@ export class AppComponent implements OnInit {
         }
       }
     });
+  attractionType = "artwork";
+
+  attractionSelect(event) {
+    this.attractionType = event.target.value;
   }
-}
+ }
