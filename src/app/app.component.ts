@@ -27,9 +27,4 @@ export class AppComponent implements OnInit {
       }
     });
   }
-  
-  attractionSelect(event) {
-    this.attractionType = event.target.value;
-  }
-
 }
