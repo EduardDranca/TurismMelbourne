@@ -1,48 +1,77 @@
-<div id="sidebar">
-  <select name="Tourism" id="tourism" (change)="attractionSelect($event)">
-    <option value="artwork">Artwork</option>
-    <option value="attraction">Attraction</option>
-    <option value="camp_pitch">Camp Pitch</option>
-    <option value="camp_site">Camp Site</option>
-    <option value="picnic_site">Picnic Site</option>
-    <option value="viewpoint">View Point</option>
-    <option value="zoo">Zoo</option>
-  </select>
-  <div id="favorites">
-    <div class="title">
-      Favorite Places:
-    </div>
-    <div class="place">
-      <div class="icons">
-        <i class="material-icons hover">star</i>
+<mat-sidenav-container class="map-wrapper">
+  <mat-sidenav class="sidenav" opened mode="side" [disableClose]="true">
+    <mat-card class="location-card">
+      <mat-card-header>
+        <mat-card-title>
+          Your Location
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="location-card-content">
+        <input matInput [placeholder]="this.address" [readonly]="true">
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-button matTooltip="Choose your location on the map." (click)="locationButtonClickHandler($event)">PICK LOCATION</button>
+      </mat-card-actions>
+    </mat-card>
+    <mat-form-field>
+      <mat-label>Filter by type</mat-label>
+      <mat-select [value]="attractionType" (selectionChange)="attractionSelect($event)">
+        <mat-option value="artwork">Artwork</mat-option>
+        <mat-option value="attraction">Attraction</mat-option>
+        <mat-option value="camp_site">Camp Site</mat-option>
+        <mat-option value="picnic_site">Picnic Site</mat-option>
+        <mat-option value="viewpoint">View Point</mat-option>
+        <mat-option value="zoo">Zoo</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          Favorite Places
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <div class="place" *ngFor="let fav of favoritePlaces; index as i" >
+        <div class="icons">
+          <mat-icon>{{fav.type}}</mat-icon>
+        </div>
+        <div class="place-content">
+          {{fav.name}}
+        </div>
       </div>
-      <div class="place-content">
-        Steam Locomotive Society of Victoria
+      <!-- <div class="place">
+        <div class="icons">
+          <mat-icon>star</mat-icon>
+        </div>
+        <div class="place-content">
+          Steam Locomotive Society of Victoria
+        </div>
       </div>
-    </div>
-    <div class="place">
-      <div class="icons">
-        <i class="material-icons hover">terrain</i>
+      <div class="place">
+        <div class="icons">
+          <mat-icon>terrain</mat-icon>
+        </div>
+        <div class="place-content">
+          LongRidge Camp Site
+        </div>
       </div>
-      <div class="place-content">
-        LongRidge Camp Site
-      </div>
-    </div>
-    <div class="place">
-      <div class="icons">
-        <i class="material-icons hover">collections</i>
-      </div>
-      <div class="place-content">
-        4DVerse Art Gallery
-      </div>
-    </div><div class="place">
-      <div class="icons">
-        <i class="material-icons hover">shopping_basket</i>
-      </div>
-      <div class="place-content">
-        Bellbird Picnic Area
-      </div>
-    </div>
-  </div>
-</div>
-<div #mapViewNode></div>
+      <div class="place">
+        <div class="icons">
+          <mat-icon class="material-icons hover">collections</mat-icon>
+        </div>
+        <div class="place-content">
+          4DVerse Art Gallery
+        </div>
+      </div><div class="place">
+        <div class="icons">
+          <mat-icon class="material-icons hover">shopping_basket</mat-icon>
+        </div>
+        <div class="place-content">
+          Bellbird Picnic Area
+        </div>
+      </div> -->
+    </mat-expansion-panel>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <div #mapViewNode></div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
