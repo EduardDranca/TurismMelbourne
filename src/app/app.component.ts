@@ -12,6 +12,7 @@ export class AppComponent implements OnInit {
   basemap = "topo-vector"
   mapZoom = 10;
   title = 'TurismMelbourne';
+  attractionType = "artwork";
 
   loged = false;
 
@@ -25,9 +26,5 @@ export class AppComponent implements OnInit {
         }
       }
     });
-  attractionType = "artwork";
-
-  attractionSelect(event) {
-    this.attractionType = event.target.value;
   }
- }
+}
