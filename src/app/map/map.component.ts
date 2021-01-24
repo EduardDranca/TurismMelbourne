@@ -6,10 +6,14 @@ import {
   ElementRef,
   Output,
   EventEmitter,
-  OnDestroy
+  OnDestroy,
+  Attribute
 } from "@angular/core";
 import { loadModules } from "esri-loader";
 import esri = __esri; // Esri TypeScript Types
+import { Attraction } from '../models/attraction';
+import { AttractionService } from '../services/attraction.service';
+import { MyAttribute } from '../models/attribute';
 
 @Component({
   selector: "app-map",
@@ -37,8 +41,13 @@ export class MapComponent implements OnInit, OnDestroy {
   private pickingLocation: Boolean = false;
   public pickingSuggestionLocation: Boolean = false;
   private locationGraphic: esri.Graphic = null;
+  private attraction: Attraction;
+  private customAttraction: Favorite;
+  private attractions: any = {};
 
-
+  public attractionWebsite = "";
+  public attractionName = "";
+  public attractionTypee = "";
   public suggestionLongitude = 144.95854;
   public suggestionLatitude = -38.025498;
   public suggestionWrapperToggled = false;
@@ -50,7 +59,7 @@ export class MapComponent implements OnInit, OnDestroy {
     return this._loaded;
   }
 
-  constructor() {}
+  constructor(private attractionService: AttractionService) {}
 
   ngOnInit() {
     // Initialize MapView and return an instance of MapView
@@ -251,8 +260,7 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   async addTypeQueryGraphics(result) {
-    console.log(result);
-    this.attractionsGraphicsLayer.removeAll();
+    // this.attractionsGraphicsLayer.removeAll();
     result.features.forEach(async (feature) => {
       if (feature.attributes.name) {
         var g = await this.createGraphicWithPopup(feature);
@@ -339,6 +347,7 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   queryLayerByType(type) {
+    this.attractionsGraphicsLayer.removeAll();
     var query = this.touristAttractionsLayer.createQuery();
     query.where = "tourism = '" + type + "'";
     query.outFields = ["*"];
@@ -348,6 +357,7 @@ export class MapComponent implements OnInit, OnDestroy {
     this.touristAttractionsLayer.queryFeatures(query).then((result) => {
       this.addTypeQueryGraphics(result);
     });
+    this.showAttraction(type);
   }
 
   queryLayerByName(name) {
@@ -371,6 +381,46 @@ export class MapComponent implements OnInit, OnDestroy {
   chooseLocationOnMap() {
     this.toggleSuggestion(false);
     this.pickingSuggestionLocation = true;
+  }
+
+  submitAttraction() {
+    this.attraction = new Attraction();    
+    this.attraction.website = this.attractionWebsite;
+    this.attraction.title = this.attractionName;
+    this.attraction.type = this.attractionTypee;
+    this.attraction.latitude = this.suggestionLatitude.toString();
+    this.attraction.longitude = this.suggestionLongitude.toString();
+    this.attraction.description = "-";
+    this.attractionService.addAttraction(this.attraction).subscribe(() => { });
+    this.toggleSuggestion(false);
+  }
+
+  async showAttraction(type: string) {
+    try {
+
+      const [Point] = await loadModules([
+        "esri/geometry/Point"
+      ]);
+
+      // modific functia sa imi aduca doar pe type
+      this.attractionService.getAttractionByType(type).subscribe(val => {
+        val.forEach(async element => {
+          this.customAttraction = new Favorite();
+          this.customAttraction.attributes = new MyAttribute();
+          this.customAttraction.attributes.website = element.website;
+          this.customAttraction.attributes.description = element.description;
+          this.customAttraction.attributes.name = element.title;
+          this.customAttraction.type = element.type;
+          this.customAttraction.geometry = new Point();
+          this.customAttraction.geometry.latitude = element.latitude;
+          this.customAttraction.geometry.longitude = element.longitude;
+          this.attractionsGraphicsLayer.add(await this.createGraphicWithPopup(this.customAttraction))
+       });
+     });
+
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   ngOnDestroy() {

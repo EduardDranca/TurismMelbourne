@@ -1,4 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { abort } from 'process';
+import { User } from '../models/user';
+import { UserService } from '../services/user.service';
 
 @Component({
   selector: 'app-register',
@@ -8,11 +12,21 @@ import { Component, OnInit } from '@angular/core';
 
 export class RegisterComponent implements OnInit {
 
-  User: any = ['Super Admin', 'Author', 'Reader'];
+  username: String = null;
+  password: String = null;
 
-  constructor() { }
+  constructor(private userService: UserService, private router: Router) { }
 
-  ngOnInit() {
+  ngOnInit() { }
+
+  addUser() {
+    var user = new User();
+    user.username = this.username;
+    user.password = this.password;
+    user.email = "-";
+    this.userService.addUser(user).subscribe(() => { });
+    this.router.navigateByUrl('/signin')
+    alert("User crated succesfully");
   }
 
 }

@@ -14,15 +14,13 @@ import { FlexLayoutModule } from '@angular/flex-layout';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { HttpClientModule } from '@angular/common/http';
-import { AddAttractionComponent } from './add-attraction/add-attraction.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     MapComponent,
     SigninComponent,
-    RegisterComponent,
-    AddAttractionComponent
+    RegisterComponent
   ],
   imports: [
     BrowserModule,

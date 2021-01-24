@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { UserService } from '../services/user.service';
 
 @Component({
   selector: 'app-signin',
@@ -7,9 +9,21 @@ import { Component, OnInit } from '@angular/core';
 })
 export class SigninComponent implements OnInit {
 
-  constructor() { }
+  constructor(private userService: UserService, private router: Router) { }
 
-  ngOnInit(): void {
+  username: String = "";
+  password: String = "";
+
+  ngOnInit(): void { }
+
+  signIn() {
+    this.userService.signInUser(this.username, this.password).subscribe(val => {
+      if (val.length != 0) {
+        this.router.navigateByUrl('/map');
+      } else {
+        alert("Username or password incorrect")
+      }
+    });
   }
 
 }
