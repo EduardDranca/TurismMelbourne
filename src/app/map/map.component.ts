@@ -1,9 +1,9 @@
+import { Favorite } from '../models/favorite';
 import {
   Component,
   OnInit,
   ViewChild,
   ElementRef,
-  Input,
   Output,
   EventEmitter,
   OnDestroy
@@ -28,51 +28,49 @@ export class MapComponent implements OnInit, OnDestroy {
   private _view: esri.MapView = null;
   private _layerUrl = "https://services-eu1.arcgis.com/zci5bUiJ8olAal7N/arcgis/rest/services/OSM_Tourism_AU/FeatureServer";
   private touristAttractionsLayer: esri.FeatureLayer = null;
-  private graphicsLayer: esri.GraphicsLayer = null;
-  private _attractionType = "artwork";
+  private attractionsGraphicsLayer: esri.GraphicsLayer = null;
+  private locationGraphicsLayer: esri.GraphicsLayer = null;
+  private routeGraphicsLayer: esri.GraphicsLayer = null;
+  private favoriteGraphicsLayer: esri.GraphicsLayer = null;
+  private routeTask: esri.RouteTask = null;
+  private search: any = null;
+  private pickingLocation: Boolean = false;
+  private locationGraphic: esri.Graphic = null;
+  public favoritePlaces: Favorite[] = [];
+  public attractionType = "artwork";
+  public address: String = "Pick your location on the map.";
 
   get mapLoaded(): boolean {
     return this._loaded;
   }
 
-  @Input()
-  set zoom(zoom: number) {
-    this._zoom = zoom;
-  }
-
-  get zoom(): number {
-    return this._zoom;
-  }
-
-  @Input()
-  set center(center: Array<number>) {
-    this._center = center;
-  }
-
-  get center(): Array<number> {
-    return this._center;
-  }
-
-  @Input()
-  set basemap(basemap: string) {
-    this._basemap = basemap;
-  }
-
-  get basemap(): string {
-    return this._basemap;
-  }
-
   constructor() {}
+
+  ngOnInit() {
+    // Initialize MapView and return an instance of MapView
+    this.initializeMap().then(mapView => {
+      // The map has been initialized
+      this._loaded = this._view.ready;
+      this.mapLoadedEvent.emit(true);
+    });
+  }
 
   async initializeMap() {
     try {
       // Load the modules for the ArcGIS API for JavaScript
-      const [EsriMap, EsriMapView, FeatureLayer, GraphicsLayer] = await loadModules([
+      const [EsriMap, EsriMapView, FeatureLayer, GraphicsLayer, RouteTask, Search, Graphic] = await loadModules([
         "esri/Map",
         "esri/views/MapView",
         "esri/layers/FeatureLayer",
-        "esri/layers/GraphicsLayer"
+        "esri/layers/GraphicsLayer",
+        "esri/tasks/RouteTask",
+        "esri/widgets/Search",
+        "esri/Graphic"
       ]);
+
+      this.routeTask = new RouteTask({
+        url: "https://utility.arcgis.com/usrsvcs/appservices/VtTobqWfJtatHNyP/rest/services/World/Route/NAServer/Route_World/solve"
+      });
 
       // Configure the Map
       const mapProperties: esri.MapProperties = {
@@ -84,8 +82,17 @@ export class MapComponent implements OnInit, OnDestroy {
       this.touristAttractionsLayer = new FeatureLayer({
         url: this._layerUrl
       });
-      this.graphicsLayer = new GraphicsLayer();
-      map.add(this.graphicsLayer);
+      this.attractionsGraphicsLayer = new GraphicsLayer();
+      map.add(this.attractionsGraphicsLayer);
+
+      this.locationGraphicsLayer = new GraphicsLayer();
+      map.add(this.locationGraphicsLayer);
+
+      this.routeGraphicsLayer = new GraphicsLayer();
+      map.add(this.routeGraphicsLayer);
+
+      this.favoriteGraphicsLayer = new GraphicsLayer();
+      map.add(this.favoriteGraphicsLayer);
 
       // Initialize the MapView
       const mapViewProperties: esri.MapViewProperties = {
@@ -96,88 +103,263 @@ export class MapComponent implements OnInit, OnDestroy {
       };
 
       this._view = new EsriMapView(mapViewProperties);
-      await this._view.when();
-      this.queryLayerByType(this._attractionType);
+      this._view.on("click", event => {
+        if (this.pickingLocation) {
+          this.searchLocation(event.mapPoint);
+        }
+      });
+
+      this._view.popup.on("trigger-action", (event) => {
+        if (event.action.id === "get-route") {
+          this.getRoute(this._view.popup.selectedFeature);
+        }
+        if (event.action.id === "add-favorite") {
+          var selection = this.queryLayerByName(this._view.popup.title);
+          this.addFavorite(selection);
+        }
+      });
+
+      this.search = new Search({
+        view: this._view
+      });
+      this.locationGraphic = new Graphic();
+
+      this.queryLayerByType(this.attractionType);
       return this._view;
     } catch (error) {
+      console.log(error);
     }
   }
 
-  ngOnInit() {
-    // Initialize MapView and return an instance of MapView
-    this.initializeMap().then(mapView => {
-      // The map has been initialized
-      this._loaded = this._view.ready;
-      this.mapLoadedEvent.emit(true);
-    });
+  async addFavorite(selection) {
+    selection = await selection;
+    console.log(selection);
+    var fav: Favorite = {
+      geometry: selection.geometry,
+      attributes: selection.attributes,
+      type: "star"
+    };
+    this.favoritePlaces.push(fav);
   }
 
-  async addGraphics(result) {
+  locationButtonClickHandler(event) {
+    this.pickingLocation = true;
+  }
+
+  searchLocation(point) {
+    this.search.clear();
+    this._view.popup.clear();
+    if (this.search.activeSource) {
+      var geocoder = this.search.activeSource.locator;
+      var params = {
+        location: point
+      };
+      geocoder.locationToAddress(params).then(
+        response => {
+          this.address = response.address;
+          this.addLocationGraphic(point);
+        },
+        err => {
+          console.log(err);
+        }
+      );
+    }
+    this.pickingLocation = false;
+  }
+
+  async addGraphic(type, point) {
+    try {
+      const [Graphic, SimpleMarkerSymbol] = await loadModules([
+        "esri/Graphic",
+        "esri/symbols/SimpleMarkerSymbol"
+      ])
+      var markerSymbol = new SimpleMarkerSymbol({
+        color: type === "start" ? "white" : "black",
+        size: "8px"
+      });
+      var g = new Graphic({
+        geometry: point,
+        symbol: markerSymbol
+      });
+      this.attractionsGraphicsLayer.add(g)
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async getRoute(destination) {
+    try {
+      const [RouteParameters, FeatureSet, SimpleLineSymbol] = await loadModules([
+        "esri/tasks/support/RouteParameters",
+        "esri/tasks/support/FeatureSet",
+        "esri/symbols/SimpleLineSymbol"
+      ]);
+      var routeParams = new RouteParameters({
+        stops: new FeatureSet({
+          features: [destination, this.locationGraphic]
+        }),
+        returnDirections: true
+      });
+      this.routeTask.solve(routeParams).then((data:any) => {
+        data.routeResults.forEach(result => {
+          result.route.symbol = new SimpleLineSymbol({
+            color: [5, 150, 255],
+            width: 3
+          });
+          this.routeGraphicsLayer.removeAll();
+          this.routeGraphicsLayer.add(result.route);
+        });
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+
+  async addLocationGraphic(point) {
+    try {
+      const [Graphic, PictureMarkerSymbol] = await loadModules([
+        "esri/Graphic",
+        "esri/symbols/PictureMarkerSymbol"
+      ]);
+      var pictureMarker: esri.PictureMarkerSymbol = new PictureMarkerSymbol({
+        url: "https://i.imgur.com/R0ORNzA.png",
+        width: 20,
+        height: 20
+      });
+      this.locationGraphicsLayer.remove(this.locationGraphic);
+
+      this.locationGraphic = new Graphic({
+        geometry: point,
+        symbol: pictureMarker
+      });
+      
+      this.locationGraphicsLayer.add(this.locationGraphic);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async addTypeQueryGraphics(result) {
+    console.log(result);
+    this.attractionsGraphicsLayer.removeAll();
+    result.features.forEach(async (feature) => {
+      if (feature.attributes.name) {
+        var g = await this.createGraphicWithPopup(feature);
+        this.attractionsGraphicsLayer.add(g);
+        // var contentStyle = "display: none;";
+        // var pictureMarker: esri.PictureMarkerSymbol = new PictureMarkerSymbol({
+        //   url: "https://developers.arcgis.com/labs/images/bluepin.png",
+        //   width: 10,
+        //   height: 20
+        // });
+
+        // if (feature.attributes.website) {
+        //   contentStyle = "";
+        // }
+
+        // var getRouteAction = {
+        //   title: "Display Route",
+        //   id: "get-route",
+        //   image: "https://image.flaticon.com/icons/png/512/149/149054.png"
+        // }
+
+        // var addFavoriteAction = {
+        //   title: "Add to Favorites",
+        //   id: "add-favorite",
+        //   image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Love_Heart_symbol.svg/651px-Love_Heart_symbol.svg.png"
+        // }
+
+        // var popupTemplate: esri.PopupTemplate = new PopupTemplate({
+        //   title: feature.attributes.name,
+        //   content:  "<div style='" + contentStyle + "'><a href=\"" + feature.attributes.website + "\">Website</a></div>",
+        //   actions: [getRouteAction, addFavoriteAction]
+        // });
+
+        // var g: esri.Graphic = new Graphic({
+        //   geometry: feature.geometry,
+        //   attributes: feature.attributes,
+        //   symbol: pictureMarker,
+        //   popupTemplate: popupTemplate
+        // });
+      }
+    });
+  }
+  
+  async createGraphicWithPopup(favorite) {
     try {
       const [Graphic, PictureMarkerSymbol, PopupTemplate] = await loadModules([
         "esri/Graphic",
         "esri/symbols/PictureMarkerSymbol",
         "esri/PopupTemplate"
       ]);
-      this.graphicsLayer.removeAll();
-      result.features.forEach((feature) => {
-        if (feature.attributes.name) {
-          var contentStyle = "display: none;";
-          var pictureMarker: esri.PictureMarkerSymbol = new PictureMarkerSymbol({
-            url: "https://developers.arcgis.com/labs/images/bluepin.png",
-            width: 10,
-            height: 20
-          });
-  
-          if (feature.attributes.website) {
-            contentStyle = "";
-          }
-
-          var popupTemplate: esri.PopupTemplate = new PopupTemplate({
-            title: feature.attributes.name,
-            content:  "<div style='" + contentStyle + "'><a href=\"" + feature.attributes.website + "\">Website</a></div>" + 
-            "<div class='button'>Add to favorites</div>"
-          });
-
-          var g: esri.Graphic = new Graphic({
-            geometry: feature.geometry,
-            attributes: feature.attributes,
-            symbol: pictureMarker,
-            popupTemplate: popupTemplate
-          });
-          this.graphicsLayer.add(g);
-        }
+      var contentStyle = "display: none;";
+      var pictureMarker: esri.PictureMarkerSymbol = new PictureMarkerSymbol({
+        url: "https://developers.arcgis.com/labs/images/bluepin.png",
+        width: 10,
+        height: 20
       });
+
+      if (favorite.attributes.website) {
+        contentStyle = "";
+      }
+
+      var getRouteAction = {
+        title: "Display Route",
+        id: "get-route",
+        image: "https://image.flaticon.com/icons/png/512/149/149054.png"
+      }
+
+      var addFavoriteAction = {
+        title: "Add to Favorites",
+        id: "add-favorite",
+        image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Love_Heart_symbol.svg/651px-Love_Heart_symbol.svg.png"
+      }
+
+      var popupTemplate: esri.PopupTemplate = new PopupTemplate({
+        title: favorite.attributes.name,
+        content:  "<div style='" + contentStyle + "'><a href=\"" + favorite.attributes.website + "\">Website</a></div>",
+        actions: [getRouteAction, addFavoriteAction]
+      });
+
+      var g: esri.Graphic = new Graphic({
+        geometry: favorite.geometry,
+        attributes: favorite.attributes,
+        symbol: pictureMarker,
+        popupTemplate: popupTemplate
+      });
+
+      return g;
     } catch (error) {
       console.log(error);
     }
   }
 
-  async queryFeatureLayer(point, distance, spatialRelationship, sqlExpression) {
-    try {
-      const [Query] = await loadModules([
-        "esri/task/support/Query"
-      ]);
-      var query = new Query({
-        geometry: point,
-        distance: distance,
-        spatialRelationship: spatialRelationship,
-        outFields: ["*"],
-        returnGeometry: true,
-        where: sqlExpression
-      });
-      this.touristAttractionsLayer.queryFeatures(query).then((result) => {
-        this.addGraphics(result);
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  }
-  
   attractionSelect(event) {
-    this._attractionType = event.target.value;
+    this.attractionType = event.value;
     if (this.touristAttractionsLayer) {
-      this.queryLayerByType(this._attractionType);
+      this.queryLayerByType(this.attractionType);
+    }
+  }
+
+  async clickFavorite(event, fav) {
+    try {
+      const [Point] = await loadModules([
+        "esri/geometry/Point"
+      ]);
+      console.log(fav);
+      var g = await this.createGraphicWithPopup(fav);
+      this.favoriteGraphicsLayer.removeAll();
+      this.favoriteGraphicsLayer.add(g);
+      this._view.goTo({
+        target: g,
+        animate: true
+      }).then(() => {
+        this._view.popup.location = new Point(g.geometry);
+        this._view.popup.open({features: [g]});
+      });
+    } catch (error) {
+      console.log(error);
     }
   }
 
@@ -189,7 +371,21 @@ export class MapComponent implements OnInit, OnDestroy {
     query.distance = Math.min(this._view.extent.height, this._view.extent.width) / 2;
     query.spatialRelationship = "intersects";
     this.touristAttractionsLayer.queryFeatures(query).then((result) => {
-      this.addGraphics(result);
+      this.addTypeQueryGraphics(result);
+    });
+  }
+
+  queryLayerByName(name) {
+    var query = this.touristAttractionsLayer.createQuery();
+    var nameEscaped: String = name;
+    nameEscaped = nameEscaped.replace("'", "''");
+    query.where = "name = '" + nameEscaped + "'";
+    query.outFields = ["*"];
+    return this.touristAttractionsLayer.queryFeatures(query).then((result) => {
+      if (result.features.length !== 0) {
+        return result.features[0];
+      }
+      return null;
     });
   }
 
