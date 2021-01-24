@@ -20,6 +20,14 @@ body {
     width: 100% !important;
 }
 
+.mat-expansion-panel {
+    max-width: 300px;
+}
+
+.mat-chip:hover {
+    cursor: pointer;
+}
+
 .location-card {
     margin-bottom: 50px;
 }
@@ -115,6 +123,10 @@ body {
     max-width: 400px;
     overflow: hidden;
     top: 4px;
+}
+
+.place-content:hover {
+    cursor: pointer;
 }
 
 .title {

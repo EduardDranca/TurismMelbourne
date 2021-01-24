@@ -1,4 +1,5 @@
 export interface Favorite {
-    name: String;
+    geometry: any;
+    attributes: any;
     type: String;
 }
