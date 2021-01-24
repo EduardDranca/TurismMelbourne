@@ -9,6 +9,7 @@ import {
   OnDestroy
 } from "@angular/core";
 import { loadModules } from "esri-loader";
+import { AttractionService } from "../services/attraction.service";
 import esri = __esri; // Esri TypeScript Types
 
 @Component({
@@ -70,7 +71,7 @@ export class MapComponent implements OnInit, OnDestroy {
     return this._basemap;
   }
 
-  constructor() {}
+  constructor(private attractionService: AttractionService) {}
 
   async initializeMap() {
     try {
@@ -119,6 +120,9 @@ export class MapComponent implements OnInit, OnDestroy {
       console.log("mapView ready: ", this._view.ready);
       this._loaded = this._view.ready;
       this.mapLoadedEvent.emit(true);
+    });
+    this.attractionService.getAll().subscribe(val => {
+      console.log(val);
     });
   }
 
