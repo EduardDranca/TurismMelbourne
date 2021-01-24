@@ -13,14 +13,16 @@ import { RegisterComponent } from './register/register.component';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-
+import { HttpClientModule } from '@angular/common/http';
+import { AddAttractionComponent } from './add-attraction/add-attraction.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     MapComponent,
     SigninComponent,
-    RegisterComponent
+    RegisterComponent,
+    AddAttractionComponent
   ],
   imports: [
     BrowserModule,
@@ -29,7 +31,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
     MaterialModule,
     BrowserAnimationsModule,
     FlexLayoutModule,
-    FormsModule
+    FormsModule,
+    HttpClientModule
   ],
   providers: [],
   bootstrap: [AppComponent]
