@@ -9,7 +9,6 @@ import {
   OnDestroy
 } from "@angular/core";
 import { loadModules } from "esri-loader";
-import { AttractionService } from "../services/attraction.service";
 import esri = __esri; // Esri TypeScript Types
 
 @Component({
@@ -132,6 +131,16 @@ export class MapComponent implements OnInit, OnDestroy {
     }
   }
 
+  async addFavorite(selection) {
+    selection = await selection;
+    console.log(selection);
+    var fav: Favorite = {
+      geometry: selection.geometry,
+      attributes: selection.attributes,
+      type: "star"
+    };
+    this.favoritePlaces.push(fav);
+  }
 
   locationButtonClickHandler(event) {
     this.pickingLocation = true;
