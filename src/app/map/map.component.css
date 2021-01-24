@@ -16,16 +16,16 @@ body {
     height: 100vh;
 }
 
-.mat-form-field {
-    width: 100% !important;
-}
-
 .mat-expansion-panel {
     max-width: 300px;
 }
 
 .mat-chip:hover {
     cursor: pointer;
+}
+
+.sidenav .mat-form-field {
+    width: 100% !important;
 }
 
 .location-card {
@@ -138,4 +138,41 @@ body {
     margin-right: 10px;
     z-index: 4;
     -webkit-user-select: none;
+}
+
+.suggest-button {
+    position: absolute;
+    bottom: 20px;
+}
+
+.shade {
+    z-index: 10;
+    display: none;
+    top: 0;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.shade>mat-card {
+    width: 30%;
+    margin: auto;
+    margin-top: 10%;
+    padding: 50px;
+}
+
+.shade>mat-card>mat-card-content>mat-form-field {
+    padding-top: 20px;
+    padding-bottom: 20px;
+    width: 100%;
+}
+
+.single-line-form {
+    flex-direction: row;
+    flex-flow: row;
+}
+
+.single-line-form>mat-form-field {
+    margin-right: 40px;
 }
