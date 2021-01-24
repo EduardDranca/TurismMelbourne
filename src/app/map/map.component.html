@@ -49,8 +49,54 @@
         </div>
       </div> -->
     </mat-expansion-panel>
+    <button mat-button class="suggest-button" (click)="toggleSuggestion(true)">Suggest a Location</button>
   </mat-sidenav>
   <mat-sidenav-content>
-    <div #mapViewNode></div>
+    <div #mapViewNode [style.cursor]="pickingSuggestionLocation ? 'pointer' : ''"></div>
   </mat-sidenav-content>
 </mat-sidenav-container>
+<div class="shade" [style.display]="suggestionWrapperToggled ? 'block' : 'none'">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>
+        Suggest a New Attraction
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-form-field>
+        <mat-label>Attraction Name</mat-label>
+        <input matInput placeholder="Name">
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Attraction Type</mat-label>
+        <mat-select>
+          <mat-option value="artwork">Artwork</mat-option>
+          <mat-option value="attraction">Attraction</mat-option>
+          <mat-option value="camp_site">Camp Site</mat-option>
+          <mat-option value="picnic_site">Picnic Site</mat-option>
+          <mat-option value="viewpoint">View Point</mat-option>
+          <mat-option value="zoo">Zoo</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Website</mat-label>
+        <input matInput placeholder="https://www.example.com">
+      </mat-form-field>
+      <div class="single-line-form">
+        <mat-form-field>
+          <mat-label>Longitude</mat-label>
+          <input [(value)]="suggestionLongitude" matInput>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Latitude</mat-label>
+          <input [(value)]="suggestionLatitude" matInput>
+        </mat-form-field>
+        <button mat-button (click)="chooseLocationOnMap()">Choose on Map</button>
+      </div>
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-button>SUBMIT</button>
+      <button mat-button (click)="toggleSuggestion(false)">CLOSE</button>
+    </mat-card-actions>
+  </mat-card>
+</div>

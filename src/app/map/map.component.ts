@@ -35,7 +35,13 @@ export class MapComponent implements OnInit, OnDestroy {
   private routeTask: esri.RouteTask = null;
   private search: any = null;
   private pickingLocation: Boolean = false;
+  public pickingSuggestionLocation: Boolean = false;
   private locationGraphic: esri.Graphic = null;
+
+
+  public suggestionLongitude = 144.95854;
+  public suggestionLatitude = -38.025498;
+  public suggestionWrapperToggled = false;
   public favoritePlaces: Favorite[] = [];
   public attractionType = "artwork";
   public address: String = "Pick your location on the map.";
@@ -106,6 +112,10 @@ export class MapComponent implements OnInit, OnDestroy {
       this._view.on("click", event => {
         if (this.pickingLocation) {
           this.searchLocation(event.mapPoint);
+        } else if (this.pickingSuggestionLocation) {
+          this.suggestionLongitude = event.mapPoint.longitude;
+          this.suggestionLatitude = event.mapPoint.latitude;
+          this.toggleSuggestion(true);
         }
       });
 
@@ -247,41 +257,6 @@ export class MapComponent implements OnInit, OnDestroy {
       if (feature.attributes.name) {
         var g = await this.createGraphicWithPopup(feature);
         this.attractionsGraphicsLayer.add(g);
-        // var contentStyle = "display: none;";
-        // var pictureMarker: esri.PictureMarkerSymbol = new PictureMarkerSymbol({
-        //   url: "https://developers.arcgis.com/labs/images/bluepin.png",
-        //   width: 10,
-        //   height: 20
-        // });
-
-        // if (feature.attributes.website) {
-        //   contentStyle = "";
-        // }
-
-        // var getRouteAction = {
-        //   title: "Display Route",
-        //   id: "get-route",
-        //   image: "https://image.flaticon.com/icons/png/512/149/149054.png"
-        // }
-
-        // var addFavoriteAction = {
-        //   title: "Add to Favorites",
-        //   id: "add-favorite",
-        //   image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Love_Heart_symbol.svg/651px-Love_Heart_symbol.svg.png"
-        // }
-
-        // var popupTemplate: esri.PopupTemplate = new PopupTemplate({
-        //   title: feature.attributes.name,
-        //   content:  "<div style='" + contentStyle + "'><a href=\"" + feature.attributes.website + "\">Website</a></div>",
-        //   actions: [getRouteAction, addFavoriteAction]
-        // });
-
-        // var g: esri.Graphic = new Graphic({
-        //   geometry: feature.geometry,
-        //   attributes: feature.attributes,
-        //   symbol: pictureMarker,
-        //   popupTemplate: popupTemplate
-        // });
       }
     });
   }
@@ -387,6 +362,15 @@ export class MapComponent implements OnInit, OnDestroy {
       }
       return null;
     });
+  }
+
+  toggleSuggestion(toggled) {
+    this.suggestionWrapperToggled = toggled;
+  }
+
+  chooseLocationOnMap() {
+    this.toggleSuggestion(false);
+    this.pickingSuggestionLocation = true;
   }
 
   ngOnDestroy() {
