@@ -14,6 +14,9 @@ import esri = __esri; // Esri TypeScript Types
 import { Attraction } from '../models/attraction';
 import { AttractionService } from '../services/attraction.service';
 import { MyAttribute } from '../models/attribute';
+import { UserService } from '../services/user.service';
+import { Relation } from '../models/relation';
+import { FlexAlignStyleBuilder } from '@angular/flex-layout';
 
 @Component({
   selector: "app-map",
@@ -59,15 +62,35 @@ export class MapComponent implements OnInit, OnDestroy {
     return this._loaded;
   }
 
-  constructor(private attractionService: AttractionService) {}
+  constructor(private attractionService: AttractionService, private userService: UserService) {}
 
-  ngOnInit() {
-    // Initialize MapView and return an instance of MapView
-    this.initializeMap().then(mapView => {
-      // The map has been initialized
-      this._loaded = this._view.ready;
-      this.mapLoadedEvent.emit(true);
-    });
+  async ngOnInit() {
+    try {
+      const [Point] = await loadModules([
+        "esri/geometry/Point"
+      ]);
+      
+      // Initialize MapView and return an instance of MapView
+      this.initializeMap().then(mapView => {
+        // The map has been initialized
+        this._loaded = this._view.ready;
+        this.mapLoadedEvent.emit(true);
+        this.userService.getFavoriteAttraction(localStorage.getItem("userId")).subscribe(val => {
+          val.forEach(element => {
+            console.log(element);
+            this.queryLayerById(element.attraction_id).then(data => {
+              var fav = new Favorite();
+              fav.attributes = data.attributes;
+              fav.geometry = new Point(data.geometry);
+              fav.type = "star";
+              this.favoritePlaces.push(fav);
+            });
+          });
+        })
+      });
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   async initializeMap() {
@@ -151,14 +174,21 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   async addFavorite(selection) {
+    var userId = localStorage.getItem("userId");
     selection = await selection;
     console.log(selection);
+    var relation = new Relation();
+    relation.attraction_id = selection.attributes.objectid;
+    relation.user_id = userId;
+    console.log(relation);
+    this.userService.addFavoriteAttraction(relation).subscribe(() => { });
     var fav: Favorite = {
       geometry: selection.geometry,
       attributes: selection.attributes,
       type: "star"
     };
     this.favoritePlaces.push(fav);
+    this._view.popup.close();
   }
 
   locationButtonClickHandler(event) {
@@ -229,6 +259,7 @@ export class MapComponent implements OnInit, OnDestroy {
           this.routeGraphicsLayer.add(result.route);
         });
       });
+      this._view.popup.close();
     } catch (error) {
       console.log(error);
     }
@@ -260,7 +291,6 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   async addTypeQueryGraphics(result) {
-    // this.attractionsGraphicsLayer.removeAll();
     result.features.forEach(async (feature) => {
       if (feature.attributes.name) {
         var g = await this.createGraphicWithPopup(feature);
@@ -330,7 +360,6 @@ export class MapComponent implements OnInit, OnDestroy {
       const [Point] = await loadModules([
         "esri/geometry/Point"
       ]);
-      console.log(fav);
       var g = await this.createGraphicWithPopup(fav);
       this.favoriteGraphicsLayer.removeAll();
       this.favoriteGraphicsLayer.add(g);
@@ -366,6 +395,21 @@ export class MapComponent implements OnInit, OnDestroy {
     nameEscaped = nameEscaped.replace("'", "''");
     query.where = "name = '" + nameEscaped + "'";
     query.outFields = ["*"];
+    return this.touristAttractionsLayer.queryFeatures(query).then((result) => {
+      if (result.features.length !== 0) {
+        return result.features[0];
+      }
+      return null;
+    });
+  }
+
+  queryLayerById(id) {
+    var query = this.touristAttractionsLayer.createQuery();
+    var idEscaped: String = id;
+    idEscaped = idEscaped.replace("'", "''");
+    query.where = "objectid = '" + id + "'";
+    query.outFields = ["*"];
+    console.log(query);
     return this.touristAttractionsLayer.queryFeatures(query).then((result) => {
       if (result.features.length !== 0) {
         return result.features[0];

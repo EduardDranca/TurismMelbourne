@@ -26,7 +26,7 @@ export class RegisterComponent implements OnInit {
     user.email = "-";
     this.userService.addUser(user).subscribe(() => { });
     this.router.navigateByUrl('/signin')
-    alert("User crated succesfully");
+    alert("User created succesfully");
   }
 
 }

@@ -18,7 +18,9 @@ export class SigninComponent implements OnInit {
 
   signIn() {
     this.userService.signInUser(this.username, this.password).subscribe(val => {
-      if (val.length != 0) {
+      if (val.length === 1) {
+        console.log(val);
+        localStorage.setItem("userId", val[0].id);
         this.router.navigateByUrl('/map');
       } else {
         alert("Username or password incorrect")
